@@ -4,6 +4,7 @@ const auth = require("./routes/auth");
 const users = require("./routes/users");
 const express = require("express");
 var cors = require("cors");
+const { append } = require("express/lib/response");
 const app = express();
 const { API_PORT, MONGO_URI, jwtPrivateKey } = process.env;
 if (!jwtPrivateKey || !API_PORT || !MONGO_URI) {
@@ -17,6 +18,9 @@ mongoose
 
 app.use(express.json());
 app.use(cors());
+app.get("/", async (req, res) => {
+  res.send("welcome");
+});
 app.use("/api/auth", auth);
 app.use("/api/users", users);
 
