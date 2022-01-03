@@ -7,7 +7,7 @@ var cors = require("cors");
 const { append } = require("express/lib/response");
 const app = express();
 const { API_PORT, MONGO_URI, jwtPrivateKey } = process.env;
-if (!jwtPrivateKey || !API_PORT || !MONGO_URI) {
+if (!jwtPrivateKey) {
   console.error("FATAL ERROR: jwtPrivateKey is not defined.");
   process.exit(1);
 }
@@ -23,5 +23,5 @@ app.get("/", async (req, res) => {
 });
 app.use("/api/auth", auth);
 app.use("/api/users", users);
-
-app.listen(API_PORT, () => console.log(`Listening on PORT ${API_PORT}...`));
+let port = process.env.PORT || 5000;
+app.listen(port, () => console.log(`Listening on PORT ${port}...`));
