@@ -2,6 +2,7 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const auth = require("./routes/auth");
 const users = require("./routes/users");
+const account = require("./routes/account");
 const express = require("express");
 var cors = require("cors");
 const { append } = require("express/lib/response");
@@ -23,5 +24,6 @@ app.get("/", async (req, res) => {
 });
 app.use("/api/auth", auth);
 app.use("/api/users", users);
+app.use("/api/account", account);
 let port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Listening on PORT ${port}...`));

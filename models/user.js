@@ -53,11 +53,15 @@ const userSchema = new mongoose.Schema(
     fonction: {
       type: String,
       max: 50,
-      default: '',
+      default: "",
     },
     services: {
       type: Array,
       default: [],
+    },
+    status: {
+      type: String,
+      default: "pending",
     },
     isAdmin: {
       type: Boolean,
@@ -69,16 +73,12 @@ const userSchema = new mongoose.Schema(
       default: "simpleUser",
     },
   },
-  { timestamps: true }
+  { timestamps: true, strict: false }
 );
 userSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign(
-    { _id: this._id, isAdmin: this.isAdmin },
-    jwtPrivateKey,
-    {
-      expiresIn: "2h",
-    }
-  );
+  const token = jwt.sign({ _id: this._id, role: this.role }, jwtPrivateKey, {
+    expiresIn: "2h",
+  });
   return token;
 };
 module.exports = mongoose.model("user", userSchema);

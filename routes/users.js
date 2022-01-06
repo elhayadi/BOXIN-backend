@@ -1,12 +1,33 @@
-const auth = require('../middleware/auth');
-const _ = require('lodash');
+const auth = require("../middleware/auth");
+const admin = require("../middleware/admin");
+const _ = require("lodash");
 const User = require("../models/user");
-const express = require('express');
+const express = require("express");
 const router = express.Router();
 
-router.get('/me', auth, async (req, res) => {
-    const user = await User.findById(req.user._id);
-    res.send(_.omit(user, ["password"]));
-  });
+router.get("/", auth, async (req, res) => {
+  const users = await User.find({ role: req.query.role }).select('-password').exec();
+  res.send(users);
+});
 
-module.exports = router; 
+router.get("/allUsersByStatus", [auth, admin], async (req, res) => {
+  const users = await User.find({ status: req.query.status }).exec();
+  res.send(users);
+});
+
+router.post("/validate", [auth, admin], async (req, res) => {
+  const user = await User.findByIdAndUpdate(
+    req.body._id,
+    {
+      status: req.body.status,
+    },
+    { new: true }
+  );
+
+  if (!user)
+    return res.status(300).send("The user with the given ID was not found.");
+
+  res.send(_.omit(user, ["password"]));
+});
+
+module.exports = router;

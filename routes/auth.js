@@ -13,6 +13,15 @@ router.post("/login", async (req, res) => {
   if (!validPassword)
     return res.status(400).json({ message: "Invalid email or password." });
 
+  if (user.status === "pending")
+    return res
+      .status(300)
+      .json({ message: "Votre Compte est en attente de Validation" });
+  if (user.status === "banned")
+    return res
+      .status(400)
+      .json({ message: "Votre Compte à été bloquer, contactez le support" });
+
   const accessToken = user.generateAuthToken();
   res.header("x-auth-token", accessToken).send({ accessToken, user });
 });
