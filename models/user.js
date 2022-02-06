@@ -55,6 +55,18 @@ const userSchema = new mongoose.Schema(
       max: 50,
       default: "",
     },
+    servicesLeader: [
+      {
+        member: { type: mongoose.Schema.Types.ObjectId, ref: "service" },
+        time: { type: Date, default: Date.now },
+      },
+    ],
+    servicesMember: [
+      {
+        member: { type: mongoose.Schema.Types.ObjectId, ref: "service" },
+        time: { type: Date, default: Date.now },
+      },
+    ],
     services: {
       type: Array,
       default: [],
@@ -77,7 +89,7 @@ const userSchema = new mongoose.Schema(
 );
 userSchema.methods.generateAuthToken = function () {
   const token = jwt.sign({ _id: this._id, role: this.role }, jwtPrivateKey, {
-    expiresIn: "2h",
+    expiresIn: "24h",
   });
   return token;
 };

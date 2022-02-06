@@ -6,12 +6,18 @@ const express = require("express");
 const router = express.Router();
 
 router.get("/", auth, async (req, res) => {
-  const users = await User.find({ role: req.query.role }).select('-password').exec();
+  const users = await User.find({ role: req.query.role })
+    .select("-password")
+    .exec();
   res.send(users);
 });
 
 router.get("/allUsersByStatus", [auth, admin], async (req, res) => {
-  const users = await User.find({ status: req.query.status }).exec();
+  let users = await User.find({ status: req.query.status }).exec();
+  // Using the _.filter() method
+  users = _.filter(users, function (o) {
+    return o.role !== "admin";
+  });
   res.send(users);
 });
 
