@@ -15,7 +15,9 @@ if (!jwtPrivateKey) {
   process.exit(1);
 }
 mongoose
-  .connect("mongodb://localhost:27017/boxin?retryWrites=true&w=majority")
+  .connect(
+    "mongodb+srv://boxin:461649B972@boxin.ck3do.mongodb.net/boxin?retryWrites=true&w=majority"
+  )
   .then(() => console.log("Connected to MongoDB..."))
   .catch((err) => console.error("Could not connect to MongoDB..."));
 
