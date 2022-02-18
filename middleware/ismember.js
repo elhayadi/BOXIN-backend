@@ -1,4 +1,5 @@
 const _ = require("lodash");
+const Service = require("../models/service");
 const CheckExist = async (members, _id) => {
   let result = false;
   const response = await _.find(members, ["_id", _id]);
@@ -12,7 +13,8 @@ module.exports = function (req, res, next) {
   // 401 Unauthorized
   // 403 Forbidden
   console.log(req.body);
-  if (!CheckExist(req.body.service.members, req.user._id))
+  const service = Service.findById(req.body.service);
+  if (!CheckExist(service.members, req.user._id))
     return res.status(404).send("Access denied.");
 
   next();

@@ -21,21 +21,16 @@ const serviceSchema = new mongoose.Schema(
     leaders: [
       {
         leader: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-        time : { type : Date, default: Date.now }
+        time: { type: Date, default: Date.now },
       },
     ],
     demands: [
       {
         member: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-        time : { type : Date, default: Date.now }
+        time: { type: Date, default: Date.now },
       },
     ],
-    members: [
-      {
-        member: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-        time : { type : Date, default: Date.now }
-      },
-    ],
+    members: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
     isPublic: {
       type: Boolean,
       default: false,

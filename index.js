@@ -5,6 +5,7 @@ const users = require("./routes/users");
 const account = require("./routes/account");
 const service = require("./routes/service");
 const post = require("./routes/post");
+const bodyParser = require("body-parser");
 const express = require("express");
 var cors = require("cors");
 const { append } = require("express/lib/response");
@@ -21,11 +22,14 @@ mongoose
   .then(() => console.log("Connected to MongoDB..."))
   .catch((err) => console.error("Could not connect to MongoDB..."));
 
-app.use(express.json());
+app.use(bodyParser.urlencoded({ limit: "50mb", extended: true }));
+app.use(bodyParser.json({ limit: "50mb", extended: true }));
 app.use(cors());
+
 app.get("/", async (req, res) => {
   res.send("welcome");
 });
+app.use("/uploads", express.static("uploads"));
 app.use("/api/auth", auth);
 app.use("/api/users", users);
 app.use("/api/account", account);

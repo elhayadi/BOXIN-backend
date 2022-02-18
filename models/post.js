@@ -9,14 +9,22 @@ const postSchema = new mongoose.Schema(
     },
     service: { type: mongoose.Schema.Types.ObjectId, ref: "service" },
     media: {
-      type: String,
-      default: "",
+      type: Array,
+      default: [],
     },
     message: {
       type: String,
       min: 3,
     },
     isSurvey: {
+      type: Boolean,
+      default: false,
+    },
+    isImage: {
+      type: Boolean,
+      default: false,
+    },
+    isFile: {
       type: Boolean,
       default: false,
     },
