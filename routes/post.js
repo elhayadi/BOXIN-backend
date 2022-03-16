@@ -9,13 +9,13 @@ const service = require("../models/service");
 const isleader = require("../middleware/isleader");
 const ismember = require("../middleware/ismember");
 const canSee = require("../middleware/canSee");
+const paginate = require("../middleware/paginate");
 const router = express.Router();
 const multer = require("multer");
 const { uuid } = require("uuidv4");
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    console.log(req.body);
     if (req.body.isImage) {
       cb(null, "./uploads/images/");
     } else {
@@ -50,8 +50,6 @@ router.post(
   upload.array("media"),
   async (req, res) => {
     try {
-      console.log(req.files);
-      console.log(req.body);
       const post = new Post();
       post.message = req.body.message;
       post.author = req.user._id;
@@ -76,8 +74,6 @@ router.post(
   upload.array("media"),
   async (req, res) => {
     try {
-      console.log(req.files);
-      console.log(req.body);
       const post = new Post();
       post.message = req.body.message;
       post.author = req.user._id;
@@ -89,7 +85,7 @@ router.post(
       post.isFile = req.body.isFile;
       post.media = req.files;
       post.service = await Service.findById(req.body.service);
-      console.log(post);
+
       await post.save();
       res.send(post);
     } catch (error) {
@@ -98,60 +94,52 @@ router.post(
     }
   }
 );
-router.get("/group", [auth, canSee], async (req, res) => {
+router.get("/group", [auth, paginate("group")], async (req, res) => {
   try {
-    const posts = await Post.find({ service: req.query.service })
-      .sort({ createdAt: -1 })
-      .limit(20)
+    console.log("getserviceposts");
+    res.send(res.paginatedResults);
+  } catch (error) {
+    res.status(400).send({ message: "Internal server error" });
+  }
+});
+router.get("/group/more", [auth, paginate("group")], async (req, res) => {
+  try {
+    console.log("getmoreserviceposts");
+    res.send(res.paginatedResults);
+  } catch (error) {
+    res.status(400).send({ message: "Internal server error" });
+  }
+});
+router.get("/cache", [auth], async (req, res) => {
+  try {
+    console.log("getcacheposts");
+    const results = await Post.find({ service: null })
       .populate("author")
       .populate("personLikes")
       .populate("personAnswers.user")
       .populate("comments.author")
       .populate("service")
+      .sort({ createdAt: -1 })
+      .limit(15)
       .exec();
-    res.send(posts.reverse());
+    res.send(results);
   } catch (error) {
     res.status(400).send({ message: "Internal server error" });
   }
 });
 
-router.get("/all", auth, async (req, res) => {
-  const user = await User.findById(req.user._id);
-  const services = await _.map(user.servicesMember, "_id");
-  const posts = await Post.find({ service: [null, ...services] })
-    .populate("author")
-    .populate("personLikes")
-    .populate("personAnswers.user")
-    .populate("comments.author")
-    .populate("service")
-    .sort({ createdAt: -1 })
-    .limit(10);
-
-  res.send(posts);
-});
-router.get("/more", auth, async (req, res) => {
+router.get("/all", [auth, paginate("all")], async (req, res) => {
   try {
-    console.log(req.query.step);
-    const user = await User.findById(req.user._id);
-    const services = await _.map(user.servicesMember, "_id");
-    const posts = await Post.find({ service: [null, ...services] })
-      .populate("author")
-      .populate("personLikes")
-      .populate("personAnswers.user")
-      .populate("comments.author")
-      .populate("service")
-      .sort({ createdAt: -1 })
-      .limit(req.query.step);
-    Post.count(function (err, count) {
-      if (err) console.log(err);
-      else {
-        if (posts.length === count) {
-          return res.send({ posts, hasMore: false });
-        }
-        console.log("Count is", count);
-        res.send({ posts, hasMore: true });
-      }
-    });
+    console.log("getallposts");
+    res.send(res.paginatedResults);
+  } catch (error) {
+    res.status(400).send({ message: "Internal server error" });
+  }
+});
+router.get("/more", [auth, paginate("all")], async (req, res) => {
+  try {
+    console.log("getmoreposts");
+    res.send(res.paginatedResults);
   } catch (error) {
     res.status(400).send({ message: "Internal server error" });
   }
@@ -159,11 +147,10 @@ router.get("/more", auth, async (req, res) => {
 
 router.post("/survey", [auth], async (req, res) => {
   try {
-    console.log(req.body);
     const user = await User.findById(req.user._id);
     const post = await Post.findById(req.body.post);
     const index = await _.findIndex(post.choices, { id: req.body.indice });
-    console.log(index);
+
     // Replace item at index using native splice
     let newchoices = [];
     await post.choices.map((item) => {
@@ -178,7 +165,6 @@ router.post("/survey", [auth], async (req, res) => {
         newchoices.push(item);
       }
     });
-    console.log(newchoices);
     await Post.findByIdAndUpdate(req.body.post, {
       $set: {
         choices: newchoices,
@@ -205,7 +191,6 @@ router.post("/like", [auth], async (req, res) => {
 });
 router.post("/unlike", [auth], async (req, res) => {
   try {
-    console.log(req.body._id);
     const user = await User.findById(req.user._id);
     const post = await Post.findByIdAndUpdate(req.body._id, {
       $pull: { personLikes: user._id },

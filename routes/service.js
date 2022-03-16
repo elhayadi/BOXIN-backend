@@ -37,34 +37,37 @@ router.post("/add", [auth, admin], async (req, res) => {
   }
 });
 router.get("/", [auth], async (req, res) => {
-  const service = await Service.findOne({ displayName: req.query.displayName })
+  const service = await Service.findOne({ _id: req.query.displayName })
     .populate("members")
     .exec();
   res.send(service ? service : null);
 });
-router.get("/all", auth, async (req, res) => {
-  const services = await Service.find().populate("members").exec();
+router.get("/all", async (req, res) => {
+  console.log("allServices");
+  const services = await Service.find()
+    .select("_id displayName photoURL isPublic status leaders createdAt")
+    .exec();
   res.send(services);
 });
-router.get("/names", async (req, res) => {
-  const services = await Service.find()
-    .select("displayName isPublic status")
+router.get("/leaderOf", auth, async (req, res) => {
+  console.log("leaderOf");
+  const user = await User.findById(req.user._id);
+  const services = await Service.find({
+    _id: { $in: user.servicesLeader },
+  })
+    .select("_id displayName photoURL isPublic status leaders createdAt")
     .exec();
-  res.send(_.filter(services, { status: "active" }));
+  res.send(services);
+});
+router.get("/memberIn", auth, async (req, res) => {
+  console.log("memberIn");
+  const services = await Service.find({ members: req.user._id })
+    .select("_id displayName photoURL isPublic status leaders createdAt")
+    .exec();
+  res.send(services);
 });
 
 // --------------- LEADERS -----------------------
-const CheckExist = async (members, _id) => {
-  let result = false;
-  if (members.length > 0) {
-    const response = _.find(members, ["_id", _id]);
-    if (response) {
-      result = true;
-    }
-  }
-
-  return result;
-};
 
 router.post("/leader", [auth, admin], async (req, res) => {
   try {
@@ -76,7 +79,7 @@ router.post("/leader", [auth, admin], async (req, res) => {
 
     console.log("ok2");
     const found = await _.findIndex(service.members, ["_id", user._id]);
-    console.log(found);
+
     if (found === -1) {
       await user.servicesMember.push(req.body.service);
       await service.members.push(user);
@@ -154,7 +157,6 @@ router.post("/membership/refuse", [auth, isleader], async (req, res) => {
 });
 router.post("/membership/accept", [auth, isleader], async (req, res) => {
   try {
-    console.log(req.body);
     const service1 = await Service.findById(req.body.service._id).populate(
       "members"
     );
@@ -162,7 +164,6 @@ router.post("/membership/accept", [auth, isleader], async (req, res) => {
       "_id",
       req.body.member._id,
     ]);
-    console.log(found);
     if (found === -1) {
       const user = await User.findById(req.body.member._id);
       await user.servicesMember.push(service1);
@@ -185,10 +186,9 @@ router.put(
   [auth, upload.single("profileImage")],
   async (req, res) => {
     try {
-      console.log(req.body);
-
+      let service = null;
       if (req.file) {
-        await Service.findByIdAndUpdate(
+        service = await Service.findByIdAndUpdate(
           req.body._id,
           {
             displayName: req.body.displayName,
@@ -199,9 +199,8 @@ router.put(
             new: true,
           }
         );
-        console.log(req.file);
       } else {
-        await Service.findByIdAndUpdate(
+        service = await Service.findByIdAndUpdate(
           req.body._id,
           {
             displayName: req.body.displayName,
@@ -213,7 +212,7 @@ router.put(
         );
       }
 
-      res.status(200).send({ message: "created successfuly" });
+      res.status(200).send({ service, message: "created successfuly" });
     } catch (error) {
       res.status(400).send({ message: "Internal server error" });
     }

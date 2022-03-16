@@ -35,13 +35,8 @@ const upload = multer({
 
 router.get("/", auth, async (req, res) => {
   const user = await User.findById(req.user._id);
-
-  const result = await Service.find({ _id: { $in: user.servicesLeader } });
-  const members = await Service.find({ _id: { $in: user.servicesMember } });
   res.send({
     user: _.omit(user, ["password"]),
-    services: result,
-    servicesMember: members,
   });
 });
 

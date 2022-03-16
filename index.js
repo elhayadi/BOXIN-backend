@@ -5,6 +5,7 @@ const users = require("./routes/users");
 const account = require("./routes/account");
 const service = require("./routes/service");
 const post = require("./routes/post");
+const storie = require("./routes/storie");
 const bodyParser = require("body-parser");
 const express = require("express");
 var cors = require("cors");
@@ -16,9 +17,7 @@ if (!jwtPrivateKey) {
   process.exit(1);
 }
 mongoose
-  .connect(
-    "mongodb+srv://boxin:461649B972@boxin.ck3do.mongodb.net/boxin?retryWrites=true&w=majority"
-  )
+  .connect("mongodb+srv://boxin:461649B972@boxin.ck3do.mongodb.net/boxin")
   .then(() => console.log("Connected to MongoDB..."))
   .catch((err) => console.error("Could not connect to MongoDB..."));
 
@@ -35,5 +34,6 @@ app.use("/api/users", users);
 app.use("/api/account", account);
 app.use("/api/service", service);
 app.use("/api/post", post);
+app.use("/api/storie", storie);
 let port = process.env.PORT || 5000;
 app.listen(port, () => console.log(`Listening on PORT ${port}...`));
