@@ -16,7 +16,7 @@ if (!jwtPrivateKey) {
   console.error("FATAL ERROR: jwtPrivateKey is not defined.");
   process.exit(1);
 }
-mongoose
+mongoose  
   .connect("mongodb+srv://boxin:461649B972@boxin.ck3do.mongodb.net/boxin")
   .then(() => console.log("Connected to MongoDB..."))
   .catch((err) => console.error("Could not connect to MongoDB..."));
