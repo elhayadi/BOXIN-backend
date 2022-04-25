@@ -1,58 +1,46 @@
-const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
-const { jwtPrivateKey } = process.env;
-const postSchema = new mongoose.Schema(
-  {
-    author: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "user",
-    },
-    service: { type: mongoose.Schema.Types.ObjectId, ref: "service" },
-    media: {
-      type: Array,
-      default: [],
-    },
-    message: {
-      type: String,
-      min: 3,
-    },
-    isSurvey: {
-      type: Boolean,
-      default: false,
-    },
-    isImage: {
-      type: Boolean,
-      default: false,
-    },
-    isFile: {
-      type: Boolean,
-      default: false,
-    },
-    choices: {
-      type: Array,
-      default: [],
-    },
-    personAnswers: [
-      {
-        user: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-        answer: { type: Number },
-        time: { type: Date, default: Date.now },
+module.exports = (sequelize, Sequelize, DataTypes) => {
+  const Post = sequelize.define(
+    "post", // Model name
+    {
+      // Model attributes
+      _id: {
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true,
       },
-    ],
-    personLikes: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
-    comments: [
-      {
-        author: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-        time: { type: Date, default: Date.now },
-        message: { type: String },
+      message: {
+        type: DataTypes.STRING,
+        min: 3,
       },
-    ],
-    status: {
-      type: String,
-      default: "published",
+      isSurvey: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      choices: {
+        type: DataTypes.JSON,
+        default: [],
+      },
+      isImage: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      isFile: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false,
+      },
+      status: {
+        type: DataTypes.STRING,
+        defaultValue: "published",
+      },
     },
-  },
-  { timestamps: true, strict: false }
-);
+    {
+      // Options
+      timestamps: true,
+      underscrored: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    }
+  );
 
-module.exports = mongoose.model("post", postSchema);
+  return Post;
+};

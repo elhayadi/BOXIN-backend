@@ -1,46 +1,50 @@
-const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
-const { jwtPrivateKey } = process.env;
-const serviceSchema = new mongoose.Schema(
-  {
-    displayName: {
-      type: String,
-      required: true,
-      unique: true,
-      min: 3,
-      max: 20,
-    },
-    photoURL: {
-      type: String,
-      default: "",
-    },
-    about: {
-      type: String,
-      max: 50,
-    },
-    leaders: [
-      {
-        leader: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-        time: { type: Date, default: Date.now },
+module.exports = (sequelize, Sequelize, DataTypes) => {
+  const Service = sequelize.define(
+    "service", // Model name
+    {
+      // Model attributes
+      _id: {
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true,
       },
-    ],
-    demands: [
-      {
-        member: { type: mongoose.Schema.Types.ObjectId, ref: "user" },
-        time: { type: Date, default: Date.now },
+      displayName: {
+        type: DataTypes.STRING,
+        required: true,
+        unique: true,
       },
-    ],
-    members: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
-    isPublic: {
-      type: Boolean,
-      default: false,
+      photoURL: {
+        type: DataTypes.STRING,
+        default: "",
+      },
+      about: {
+        type: DataTypes.STRING,
+      },
+      isPublic: {
+        type: DataTypes.BOOLEAN,
+        default: false,
+      },
+      status: {
+        type: DataTypes.STRING,
+        default: "active",
+      },
+      created_at: {
+        allowNull: false,
+        type: DataTypes.DATE,
+      },
+      updated_at: {
+        allowNull: false,
+        type: DataTypes.DATE,
+      },
     },
-    status: {
-      type: String,
-      default: "active",
-    },
-  },
-  { timestamps: true, strict: false }
-);
+    {
+      // Options
+      timestamps: true,
+      underscrored: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    }
+  );
 
-module.exports = mongoose.model("service", serviceSchema);
+  return Service;
+};

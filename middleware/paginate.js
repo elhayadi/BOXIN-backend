@@ -1,5 +1,14 @@
-const Post = require("../models/post");
-const User = require("../models/user");
+const db = require("../models");
+
+const User = db.user;
+const Service = db.service;
+const Post = db.post;
+const Answer = db.answer;
+const Comment = db.comment;
+const Media = db.media;
+const ReplyComment = db.replyComment;
+const Like = db.like;
+const Op = db.Op;
 const _ = require("lodash");
 
 function paginatedResults(model) {
@@ -18,7 +27,7 @@ function paginatedResults(model) {
 
     const results = {};
 
-    if (endIndex < (await Post.countDocuments().exec())) {
+    if (endIndex < (await Post.count())) {
       results.next = {
         page: page + 1,
         limit: limit,
@@ -38,22 +47,65 @@ function paginatedResults(model) {
       if (model === "group") {
         search = req.query.service;
       } else {
-        const user = await User.findById(req.user._id);
-        let services = [];
-
-        services = await _.map(user.servicesMember, "_id");
-        search = [null, ...services];
+        const service = await Service.findOne({
+          where: {
+            displayName: "general",
+          },
+        });
+        const user = await User.findOne({
+          where: {
+            _id: req.user._id,
+          },
+          include: [{ model: Service, as: "services" }],
+        });
+        console.log(user.services);
+        search = await _.map(user.services, "_id");
+        search = [...search, service._id];
       }
-      results.results = await Post.find({ service: search })
-        .populate("author")
-        .populate("personLikes")
-        .populate("personAnswers.user")
-        .populate("comments.author")
-        .populate("service")
-        .sort({ createdAt: -1 })
-        .limit(limit)
-        .skip(startIndex)
-        .exec();
+      console.log(search);
+      results.results = await Post.findAll({
+        where: { serviceId: search },
+        limit: 10,
+        order: [["created_at", "DESC"]],
+        offset: startIndex,
+        include: [
+          {
+            model: Service,
+            as: "service",
+          },
+          {
+            model: User,
+            as: "author",
+          },
+          {
+            model: Answer,
+            as: "answers",
+          },
+          {
+            model: Comment,
+            as: "comments",
+            include: [
+              { model: User, as: "author" },
+              {
+                model: ReplyComment,
+                as: "replyComment",
+                include: [{ model: User, as: "author" }],
+              },
+            ],
+          },
+          {
+            model: Like,
+            as: "likes",
+            include: [{ model: User, as: "author" }],
+          },
+          {
+            model: Media,
+            as: "media",
+          },
+        ],
+      });
+
+      console.log(results.results);
 
       res.paginatedResults = results;
       next();

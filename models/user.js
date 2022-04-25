@@ -1,96 +1,71 @@
-const mongoose = require("mongoose");
-const jwt = require("jsonwebtoken");
-const { jwtPrivateKey } = process.env;
-const userSchema = new mongoose.Schema(
-  {
-    displayName: {
-      type: String,
-      required: true,
-      min: 3,
-      max: 20,
-    },
-    email: {
-      type: String,
-      required: true,
-      unique: true,
-    },
-    password: {
-      type: String,
-      required: true,
-      min: 6,
-    },
-    photoURL: {
-      type: String,
-      default: "",
-    },
-    phoneNumber: {
-      type: Number,
-      min: 8,
-    },
-    country: {
-      type: String,
-      max: 50,
-    },
-    address: {
-      type: String,
-    },
-    state: {
-      type: String,
-      max: 50,
-    },
-    city: {
-      type: String,
-      max: 50,
-    },
-    zipCode: {
-      type: Number,
-      max: 10,
-    },
-    about: {
-      type: String,
-      max: 50,
-    },
-    fonction: {
-      type: String,
-      max: 50,
-      default: "",
-    },
-    servicesLeader: [
-      {
-        member: { type: mongoose.Schema.Types.ObjectId, ref: "service" },
-        time: { type: Date, default: Date.now },
+module.exports = (sequelize, Sequelize, DataTypes) => {
+  const User = sequelize.define(
+    "user", // Model name
+    {
+      // Attributes
+      _id: {
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true,
       },
-    ],
-    servicesMember: [
-      {
-        member: { type: mongoose.Schema.Types.ObjectId, ref: "service" },
-        time: { type: Date, default: Date.now },
+      displayName: {
+        type: DataTypes.STRING,
+        required: true,
       },
-    ],
-    services: {
-      type: Array,
-      default: [],
+      email: {
+        type: DataTypes.STRING,
+        required: true,
+        unique: true,
+      },
+      password: {
+        type: DataTypes.STRING,
+        required: true,
+      },
+      photoURL: {
+        type: DataTypes.STRING,
+        defaultValue: "",
+      },
+      phoneNumber: {
+        type: DataTypes.STRING,
+      },
+      country: {
+        type: DataTypes.STRING,
+      },
+      address: {
+        type: DataTypes.STRING,
+      },
+      state: {
+        type: DataTypes.STRING,
+      },
+      city: {
+        type: DataTypes.STRING,
+      },
+      zipCode: {
+        type: DataTypes.INTEGER,
+      },
+      about: {
+        type: DataTypes.STRING,
+      },
+      fonction: {
+        type: DataTypes.STRING,
+      },
+      status: {
+        type: DataTypes.STRING,
+        defaultValue: "pending",
+      },
+      role: {
+        type: DataTypes.STRING,
+        defaultValue: "simpleUser",
+      },
     },
-    status: {
-      type: String,
-      default: "pending",
-    },
-    isAdmin: {
-      type: Boolean,
-      default: false,
-    },
-    token: { type: String },
-    role: {
-      type: String,
-      default: "simpleUser",
-    },
-  },
-  { timestamps: true, strict: false }
-);
-userSchema.methods.generateAuthToken = function () {
-  const token = jwt.sign({ _id: this._id, role: this.role }, jwtPrivateKey, {
-    expiresIn: "24h",
-  });
-  return token;
+    {
+      // Options
+      timestamps: true,
+      underscrored: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    }
+  );
+
+  return User;
 };
-module.exports = mongoose.model("user", userSchema);

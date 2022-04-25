@@ -1,12 +1,13 @@
 const auth = require("../middleware/auth");
 const admin = require("../middleware/admin");
 const _ = require("lodash");
-const Service = require("../models/service");
-const User = require("../models/user");
-const Post = require("../models/post");
-const Storie = require("../models/storie");
+const db = require("../models");
+const User = db.user;
+const Service = db.service;
+const Op = db.Op;
+const Post = db.post;
+const Storie = db.storie;
 const express = require("express");
-const service = require("../models/service");
 const isleader = require("../middleware/isleader");
 const ismember = require("../middleware/ismember");
 const canSee = require("../middleware/canSee");
@@ -32,34 +33,50 @@ router.post(
   [auth, admin],
   upload.single("media"),
   async (req, res) => {
-    try {
-      const storie = new Storie();
-      storie.author = req.user._id;
-      storie.media = req.file.path;
-      storie.due = req.body.due;
-      await storie.save();
-      res.send(storie);
-    } catch (error) {
-      console.log(error);
-      res.status(400).send({ message: "Internal server error" });
-    }
+    User.findOne({
+      where: {
+        _id: req.user._id,
+      },
+    })
+      .then((user) => {
+        Storie.create({
+          media: req.file.path,
+          due: req.body.due,
+        })
+          .then((storie) => {
+            storie.setAuthor(user);
+            res.send(storie);
+          })
+          .catch((err) => {
+            console.log(err);
+            res.status(500).send({ message: "Status n'est pas créer" });
+          });
+      })
+      .catch((err) => {
+        res.status(500).send({ message: "Internal server error" });
+      });
   }
 );
 router.get("/all", [auth], async (req, res) => {
-  try {
-    console.log("getallstories");
-    const results = await Storie.find({ status: true })
-      .populate("author")
-      .exec();
+  console.log("getallstories");
+  Storie.findAll({
+    where: {
+      status: true,
+    }
+  })
+    .then((results) => {
+      console.log(results);
 
-    const data = _.chain(results)
-      .groupBy("author")
-      .map((value, key) => ({ author: value[0].author, stories: value }))
-      .value();
-    res.send(data);
-  } catch (error) {
-    res.status(400).send({ message: "Internal server error" });
-  }
+      const data = _.chain(results)
+        .groupBy("author")
+        .map((value, key) => ({ author: value[0].author, stories: value }))
+        .value();
+      res.status(200).send(data);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send({ message: err.message });
+    });
 });
 router.post("/seen", [auth], async (req, res) => {
   try {

@@ -1,25 +1,34 @@
-const mongoose = require("mongoose");
-const storieSchema = new mongoose.Schema(
-  {
-    author: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "user",
+module.exports = (sequelize, Sequelize, DataTypes) => {
+  const Storie = sequelize.define(
+    "storie", // Model name
+    {
+      // Attributes
+      _id: {
+        type: DataTypes.UUID,
+        defaultValue: Sequelize.UUIDV4,
+        primaryKey: true,
+      },
+      media: {
+        type: DataTypes.STRING,
+        default: "",
+      },
+      status: {
+        type: DataTypes.BOOLEAN,
+        default: true,
+      },
+      due: {
+        type: DataTypes.STRING,
+        default: "day",
+      },
     },
-    media: {
-      type: String,
-      default: "",
-    },
-    status: {
-      type: Boolean,
-      default: true,
-    },
-    seenBy: [{ type: mongoose.Schema.Types.ObjectId, ref: "user" }],
-    due: {
-      type: String,
-      default: "day",
-    },
-  },
-  { timestamps: true, strict: false }
-);
+    {
+      // Options
+      timestamps: true,
+      underscrored: true,
+      createdAt: "created_at",
+      updatedAt: "updated_at",
+    }
+  );
 
-module.exports = mongoose.model("storie", storieSchema);
+  return Storie;
+};
