@@ -3,7 +3,7 @@ const db = require("../models");
 const User = db.user;
 const Service = db.service;
 const Post = db.post;
-const Answer = db.answer;
+const Choice = db.choice;
 const Comment = db.comment;
 const Media = db.media;
 const ReplyComment = db.replyComment;
@@ -58,13 +58,12 @@ function paginatedResults(model) {
           },
           include: [{ model: Service, as: "services" }],
         });
-        console.log(user.services);
         search = await _.map(user.services, "_id");
         search = [...search, service._id];
       }
       console.log(search);
       results.results = await Post.findAll({
-        where: { serviceId: search },
+        where: { serviceId: search, status: "published" },
         limit: 10,
         order: [["created_at", "DESC"]],
         offset: startIndex,
@@ -78,8 +77,9 @@ function paginatedResults(model) {
             as: "author",
           },
           {
-            model: Answer,
-            as: "answers",
+            model: Choice,
+            as: "choices",
+            include: [{ model: User, as: "voters" }],
           },
           {
             model: Comment,
@@ -104,8 +104,6 @@ function paginatedResults(model) {
           },
         ],
       });
-
-      console.log(results.results);
 
       res.paginatedResults = results;
       next();

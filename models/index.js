@@ -1,5 +1,6 @@
 const config = require("../config/config.js");
 const { Sequelize, DataTypes, Op } = require("sequelize");
+const message = require("./message.js");
 
 const sequelize = new Sequelize(
   config.db.DB_NAME,
@@ -32,16 +33,20 @@ db.like = require("./like.js")(sequelize, Sequelize, DataTypes);
 db.comment = require("./comment.js")(sequelize, Sequelize, DataTypes);
 db.member = require("./member.js")(sequelize, Sequelize, DataTypes);
 db.demand = require("./demand.js")(sequelize, Sequelize, DataTypes);
+db.saved = require("./saved.js")(sequelize, Sequelize, DataTypes);
+db.choice = require("./choice.js")(sequelize, Sequelize, DataTypes);
+db.vote = require("./vote.js")(sequelize, Sequelize, DataTypes);
+db.message = require("./message.js")(sequelize, Sequelize, DataTypes);
+db.conversation = require("./conversation.js")(sequelize, Sequelize, DataTypes);
+
 db.replyComment = require("./replayComment.js")(
   sequelize,
   Sequelize,
   DataTypes
 );
-db.answer = require("./answer.js")(sequelize, Sequelize, DataTypes);
 
 // ---- Associate
 //USER
-
 db.user.hasMany(db.post, {
   onDelete: "CASCADE",
   as: "posts",
@@ -52,8 +57,15 @@ db.user.belongsToMany(db.service, {
   as: "services",
   onDelete: "CASCADE",
 });
+db.user.belongsToMany(db.post, {
+  through: db.saved,
+  as: "saves",
+  onDelete: "CASCADE",
+});
 db.user.hasMany(db.storie, {
   onDelete: "CASCADE",
+  as: "stories",
+  foreignKey: "authorId",
 });
 db.user.belongsToMany(db.service, {
   through: db.demand,
@@ -82,9 +94,9 @@ db.post.hasMany(db.comment, {
   onDelete: "CASCADE",
   as: "comments",
 });
-db.post.hasMany(db.answer, {
+db.post.hasMany(db.choice, {
   onDelete: "CASCADE",
-  as: "answers",
+  as: "choices",
 });
 
 //COMMENT
@@ -118,7 +130,12 @@ db.like.belongsTo(db.post, {
   onDelete: "CASCADE",
   as: "post",
 });
-
+//
+db.choice.belongsToMany(db.user, {
+  through: db.vote,
+  as: "voters",
+  onDelete: "CASCADE",
+});
 //SERVICE
 
 db.service.hasMany(db.post, {
@@ -135,7 +152,6 @@ db.service.belongsToMany(db.user, {
   as: "demandes",
   onDelete: "CASCADE",
 });
-
 //MEMBERSHIP
 db.member.belongsTo(db.user, {
   onDelete: "CASCADE",
@@ -145,10 +161,44 @@ db.member.belongsTo(db.service, {
   onDelete: "CASCADE",
   as: "service",
 });
-//----------------------
+
+// Media ----------------------
 db.media.belongsTo(db.post, {
   onDelete: "CASCADE",
   as: "post",
+});
+//CHAT
+db.user.hasMany(db.message, {
+  foreignKey: "senderId",
+  as: "OutgoingMessages",
+});
+
+db.user.hasMany(db.message, {
+  foreignKey: "receiverId",
+  as: "IncomingMessages",
+});
+db.message.belongsTo(db.user, {
+  foreignKey: "senderId",
+  as: "Sender",
+});
+db.message.belongsTo(db.user, {
+  foreignKey: "receiverId",
+  as: "Receiver",
+});
+db.message.belongsTo(db.conversation);
+db.conversation.hasMany(db.message, {
+  onDelete: "CASCADE",
+  as: "messages",
+});
+db.conversation.belongsToMany(db.user, {
+  through: "participants",
+  onDelete: "CASCADE",
+});
+//Storie
+
+db.storie.belongsTo(db.user, {
+  onDelete: "CASCADE",
+  as: "author",
 });
 //db.post.belongsToMany(db.service, { through: "_id" });
 /*

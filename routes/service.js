@@ -7,6 +7,10 @@ const Service = db.service;
 const Member = db.member;
 const Post = db.post;
 const Media = db.media;
+const Choice = db.choice;
+const Comment = db.comment;
+const ReplyComment = db.replyComment;
+const Like = db.like;
 const Demand = db.demand;
 const Op = db.Op;
 const express = require("express");
@@ -25,11 +29,12 @@ const storage = multer.diskStorage({
 const upload = multer({
   storage: storage,
 });
-
-router.post("/add", [auth, admin], async (req, res) => {
+router.post("/add", async (req, res) => {
+  console.log(req.body);
+  // Save user to database
   Service.findOne({
     where: {
-      displayName: req.body.displayName,
+      displayName: req.body.newService.displayName,
     },
   })
     .then((service) => {
@@ -39,10 +44,10 @@ router.post("/add", [auth, admin], async (req, res) => {
         console.log(req.file);
         var path = "uploads/services/default.jpg";
         Service.create({
-          displayName: req.body.displayName,
-          about: req.body.about,
+          displayName: req.body.newService.displayName,
+          about: req.body.newService.about,
           photoURL: path,
-          isPublic: req.body.isPublic,
+          isPublic: req.body.newService.isPublic,
         })
           .then((service) => {
             res.send({ service });
@@ -57,11 +62,13 @@ router.post("/add", [auth, admin], async (req, res) => {
       res.status(500).send({ message: err.message });
     });
 });
+
 router.get("/", [auth], async (req, res) => {
   Service.findOne({
     where: {
       _id: req.query.displayName,
     },
+    where: { displayName: { [Op.not]: "general" } },
     include: [
       {
         model: User,
@@ -98,6 +105,28 @@ router.get("/", [auth], async (req, res) => {
                   as: "author",
                 },
                 {
+                  model: Choice,
+                  as: "choices",
+                  include: [{ model: User, as: "voters" }],
+                },
+                {
+                  model: Comment,
+                  as: "comments",
+                  include: [
+                    { model: User, as: "author" },
+                    {
+                      model: ReplyComment,
+                      as: "replyComment",
+                      include: [{ model: User, as: "author" }],
+                    },
+                  ],
+                },
+                {
+                  model: Like,
+                  as: "likes",
+                  include: [{ model: User, as: "author" }],
+                },
+                {
                   model: Media,
                   as: "media",
                 },
@@ -113,7 +142,7 @@ router.get("/", [auth], async (req, res) => {
               })
               .catch((err) => {
                 console.log(err);
-                res.status(500).send({ message: "Service n'existe pas" });
+                res.status(500).send({ message: err.message });
               });
           } else {
             return res.send({
@@ -125,18 +154,19 @@ router.get("/", [auth], async (req, res) => {
         })
         .catch((err) => {
           console.log(err);
-          res.status(500).send({ message: "Service n'existe pas" });
+          res.status(500).send({ message: err.message });
         });
     })
     .catch((err) => {
       console.log(err);
-      res.status(500).send({ message: "Service n'existe pas" });
+      res.status(500).send({ message: err.message });
     });
 });
 router.get("/all", async (req, res) => {
   console.log("allServices");
   const services = await Service.findAll({
     order: [["created_at", "DESC"]],
+    where: { displayName: { [Op.not]: "general" } },
     include: [
       {
         model: User,
@@ -338,6 +368,27 @@ router.put(
                 as: "author",
               },
               {
+                model: Choice,
+                as: "choices",
+              },
+              {
+                model: Comment,
+                as: "comments",
+                include: [
+                  { model: User, as: "author" },
+                  {
+                    model: ReplyComment,
+                    as: "replyComment",
+                    include: [{ model: User, as: "author" }],
+                  },
+                ],
+              },
+              {
+                model: Like,
+                as: "likes",
+                include: [{ model: User, as: "author" }],
+              },
+              {
                 model: Media,
                 as: "media",
               },
@@ -353,7 +404,7 @@ router.put(
             })
             .catch((err) => {
               console.log(err);
-              res.status(500).send({ message: "Service n'existe pas" });
+              res.status(500).send({ message: err.message });
             });
         })
         .catch((err) => {
@@ -398,6 +449,27 @@ router.put(
                 as: "author",
               },
               {
+                model: Choice,
+                as: "choices",
+              },
+              {
+                model: Comment,
+                as: "comments",
+                include: [
+                  { model: User, as: "author" },
+                  {
+                    model: ReplyComment,
+                    as: "replyComment",
+                    include: [{ model: User, as: "author" }],
+                  },
+                ],
+              },
+              {
+                model: Like,
+                as: "likes",
+                include: [{ model: User, as: "author" }],
+              },
+              {
                 model: Media,
                 as: "media",
               },
@@ -413,7 +485,7 @@ router.put(
             })
             .catch((err) => {
               console.log(err);
-              res.status(500).send({ message: "Service n'existe pas" });
+              res.status(500).send({ message: err.message });
             });
         })
         .catch((err) => {

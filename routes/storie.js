@@ -42,6 +42,7 @@ router.post(
         Storie.create({
           media: req.file.path,
           due: req.body.due,
+          status: true,
         })
           .then((storie) => {
             storie.setAuthor(user);
@@ -62,11 +63,16 @@ router.get("/all", [auth], async (req, res) => {
   Storie.findAll({
     where: {
       status: true,
-    }
+    },
+    order: [["created_at", "DESC"]],
+    include: [
+      {
+        model: User,
+        as: "author",
+      },
+    ],
   })
     .then((results) => {
-      console.log(results);
-
       const data = _.chain(results)
         .groupBy("author")
         .map((value, key) => ({ author: value[0].author, stories: value }))

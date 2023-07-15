@@ -16,10 +16,6 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
       },
-      choices: {
-        type: DataTypes.JSON,
-        default: [],
-      },
       isImage: {
         type: DataTypes.BOOLEAN,
         defaultValue: false,

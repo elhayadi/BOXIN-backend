@@ -15,7 +15,13 @@ router.post("/login", async (req, res) => {
     where: {
       email: req.body.email,
     },
-    include: [{ model: Service, as: "services" }],
+    include: [
+      {
+        model: Service,
+        as: "services",
+        // where: { displayName: { [Op.not]: "general" } },
+      },
+    ],
   })
     .then((user) => {
       if (!user) {
@@ -66,7 +72,9 @@ router.post("/login", async (req, res) => {
 });
 
 router.post("/register", async (req, res) => {
-  console.log(req.body);
+  console.log("------registerbody-----");
+  console.log(req.body.services);
+  console.log("-----------");
   // Save user to database
   const salt = await bcrypt.genSalt(10);
   const pwd = await bcrypt.hash(req.body.password, salt);
@@ -86,7 +94,33 @@ router.post("/register", async (req, res) => {
       })
         .then((user) => {
           user.addServices(service);
-          res.send({ user, message: "User was registered successfully!" });
+
+          req.body.services.forEach(async (elm) => {
+            let serv = await Service.findOne({
+              where: {
+                _id: elm._id,
+              },
+            });
+            await serv.addDemandes(user);
+          });
+          let token = jwt.sign(
+            { _id: user._id, role: user.role },
+            config.auth.secret,
+            {
+              expiresIn: 86400, // 24 hours
+            }
+          );
+          res.send({
+            user: {
+              _id: user._id,
+              displayName: user.displayName,
+              email: user.email,
+              role: user.role,
+              services: [service],
+            },
+            accessToken: token,
+            message: "User was registered successfully!",
+          });
         })
         .catch((err) => {
           console.log(err);

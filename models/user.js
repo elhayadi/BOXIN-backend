@@ -46,6 +46,18 @@ module.exports = (sequelize, Sequelize, DataTypes) => {
       about: {
         type: DataTypes.STRING,
       },
+      linkedinLink: {
+        type: DataTypes.STRING,
+      },
+      twitterLink: {
+        type: DataTypes.STRING,
+      },
+      instagramLink: {
+        type: DataTypes.STRING,
+      },
+      facebookLink: {
+        type: DataTypes.STRING,
+      },
       fonction: {
         type: DataTypes.STRING,
       },

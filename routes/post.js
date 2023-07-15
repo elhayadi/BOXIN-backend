@@ -5,11 +5,13 @@ const db = require("../models");
 const User = db.user;
 const Service = db.service;
 const Post = db.post;
-const Answer = db.answer;
+const Choice = db.choice;
 const Comment = db.comment;
 const Media = db.media;
+const Saved = db.saved;
 const ReplyComment = db.replyComment;
 const Like = db.like;
+const Vote = db.vote;
 const Op = db.Op;
 const express = require("express");
 const isleader = require("../middleware/isleader");
@@ -68,27 +70,54 @@ router.post(
           isSurvey: req.body.isSurvey,
           isImage: req.body.isImage,
           isFile: req.body.isFile,
-          choices: req.body.choices,
         })
-          .then(async (post) => {
-            const author = await User.findByPk(req.user._id);
-            post.setService(service);
-            post.setAuthor(author);
-            req.files.forEach((file) => {
-              let fileExtension = file.originalname.split(".")[1];
-              Media.create({
-                path: file.path,
-                extention: fileExtension,
-              })
-                .then(async (media) => {
-                  media.setPost(post);
+          .then((post) => {
+            User.findByPk(req.user._id).then((author) => {
+              post.setService(service);
+              post.setAuthor(author);
+              req.files.forEach((file) => {
+                let fileExtension = file.originalname.split(".")[1];
+                Media.create({
+                  path: file.path,
+                  extention: fileExtension,
                 })
-                .catch((err) => {
-                  console.log(err);
-                  res.status(500).send({ message: "Internal server error" });
+                  .then(async (media) => {
+                    media.setPost(post);
+                  })
+                  .catch((err) => {
+                    console.log(err);
+                    res.status(500).send({ message: "Internal server error" });
+                  });
+              });
+              if (req.body.choices) {
+                const choices = JSON.parse(req.body.choices);
+                let newchoices = [];
+                choices.forEach((choice) => {
+                  newchoices = [...newchoices, { ...choice, voters: [] }];
+                  Choice.create({
+                    option: choice.option,
+                    score: 0,
+                    postId: post._id,
+                  }).catch((err) => {
+                    console.log(err);
+                    res.status(500).send({ message: err.message });
+                  });
                 });
+                return res.send({
+                  ...post.dataValues,
+                  choices: newchoices,
+                  author: author,
+                  service: service,
+                  media: req.files,
+                });
+              }
+              res.send({
+                ...post.dataValues,
+                author: author,
+                service: service,
+                media: req.files,
+              });
             });
-            res.send({ ...post.dataValues, author: author, media: req.files });
           })
           .catch((err) => {
             console.log(err);
@@ -132,6 +161,19 @@ router.post("/service", [auth], upload.array("media"), async (req, res) => {
                 console.log(err);
                 res.status(500).send({ message: "Internal server error" });
               });
+          });
+          console.log("--------------------------------------------------");
+
+          const choices = JSON.parse(req.body.choices);
+          choices.forEach((choice) => {
+            Choice.create({
+              option: choice.option,
+              score: 0,
+              postId: post._id,
+            }).catch((err) => {
+              console.log(err);
+              res.status(500).send({ message: err.message });
+            });
           });
           res.send({ ...post.dataValues, author: author, media: req.files });
         })
@@ -183,8 +225,9 @@ router.get("/cache", auth, async (req, res) => {
             as: "author",
           },
           {
-            model: Answer,
-            as: "answers",
+            model: Choice,
+            as: "choices",
+            // include: [{ model: User, as: "author" }],
           },
           {
             model: Comment,
@@ -210,7 +253,6 @@ router.get("/cache", auth, async (req, res) => {
         ],
       })
         .then((results) => {
-          console.log(results[0].author);
           console.log("done");
           res.send(results);
         })
@@ -243,38 +285,86 @@ router.get("/more", [auth, paginate("all")], async (req, res) => {
 });
 
 router.post("/survey", [auth], async (req, res) => {
-  try {
-    const user = await User.findById(req.user._id);
-    const post = await Post.findById(req.body.post);
-    const index = await _.findIndex(post.choices, { id: req.body.indice });
-
-    // Replace item at index using native splice
-    let newchoices = [];
-    await post.choices.map((item) => {
-      if (item.id === req.body.indice) {
-        const tmp = {
-          id: item.id,
-          option: item.option,
-          score: item.score + 1,
-        };
-        newchoices.push(tmp);
-      } else {
-        newchoices.push(item);
-      }
+  Vote.create({
+    choiceId: req.body.indice,
+    userId: req.user._id,
+  })
+    .then(async (vote) => {
+      res.send(vote);
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send({ message: err.message });
     });
-    await Post.findByIdAndUpdate(req.body.post, {
-      $set: {
-        choices: newchoices,
-      },
-    });
-    post.personAnswers.push({ user, answer: req.body.indice });
-    await post.save();
-    res.send(post);
-  } catch (error) {
-    res.status(400).send({ message: "Internal server error" });
-  }
 });
+router.post("/delete", [auth], async (req, res) => {
+  Post.update(
+    { status: "archived" },
+    {
+      where: {
+        _id: req.body._id,
+      },
+    }
+  )
+    .then((post) => {
+      res.send(post);
+    })
+    .catch((err) => {
+      res.send(err.message);
+    });
+});
+router.post("/save", [auth], async (req, res) => {
+  Post.findOne({
+    where: {
+      _id: req.body._id,
+    },
+  })
+    .then((post) => {
+      if (!post) return res.status(400).json({ message: "Post Introuvable" });
+      User.findOne({
+        where: {
+          _id: req.user._id,
+        },
+      })
+        .then(async (user) => {
+          if (!user)
+            return res.status(400).json({ message: "User Introuvable" });
 
+          Saved.create({
+            userId: user._id,
+            postId: post._id,
+          })
+            .then(async (saved) => {
+              res.send(post);
+            })
+            .catch((err) => {
+              console.log(err);
+              res.status(500).send({ message: "Like Action n'est pas créer" });
+            });
+        })
+        .catch((err) => {
+          console.log(err);
+          res.status(500).send({ message: "Internal server error" });
+        });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send({ message: "Internal server error" });
+    });
+});
+router.post("/unsave", [auth], async (req, res) => {
+  Saved.findOne({
+    where: { postId: req.body._id, userId: req.user._id },
+  })
+    .then(async (saved) => {
+      await saved.destroy();
+      res.status(200).json({ message: "Deleted Successfully" });
+    })
+    .catch((err) => {
+      console.log(err);
+      res.status(500).send({ message: "Like Action n'est pas créer" });
+    });
+});
 router.post("/like", [auth], async (req, res) => {
   Post.findOne({
     where: {
