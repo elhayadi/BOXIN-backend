@@ -5,8 +5,7 @@
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "./node_modules/.bin/netlify-lambda serve src",
-    "build": "./node_modules/.bin/netlify-lambda build src"
+    "start": "node index.js"
   },
   "author": "",
   "license": "ISC",
@@ -22,7 +21,6 @@
     "multer": "^1.4.4",
     "mysql": "^2.18.1",
     "mysql2": "^2.3.3",
-    "netlify-lambda": "^2.0.16",
     "node-cron": "^3.0.0",
     "sequelize": "^6.17.0",
     "uuidv4": "^6.2.12"

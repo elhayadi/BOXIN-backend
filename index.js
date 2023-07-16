@@ -1,5 +1,5 @@
 require("dotenv").config();
-const db = require("./models");
+const db = require("../models");
 const User = db.user;
 const Service = db.service;
 const Op = db.Op;
