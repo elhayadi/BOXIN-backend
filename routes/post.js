@@ -1,7 +1,7 @@
-const auth = require("../../middleware/auth");
-const admin = require("../../middleware/admin");
+const auth = require("../middleware/auth");
+const admin = require("../middleware/admin");
 const _ = require("lodash");
-const db = require("../../models");
+const db = require("../models");
 const User = db.user;
 const Service = db.service;
 const Post = db.post;
@@ -14,14 +14,14 @@ const Like = db.like;
 const Vote = db.vote;
 const Op = db.Op;
 const express = require("express");
-const isleader = require("../../middleware/isleader");
-const ismember = require("../../middleware/ismember");
-const canSee = require("../../middleware/canSee");
-const paginate = require("../../middleware/paginate");
+const isleader = require("../middleware/isleader");
+const ismember = require("../middleware/ismember");
+const canSee = require("../middleware/canSee");
+const paginate = require("../middleware/paginate");
 const router = express.Router();
 const multer = require("multer");
 const { uuid } = require("uuidv4");
-const { replyComment } = require("../../models");
+const { replyComment } = require("../models");
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
