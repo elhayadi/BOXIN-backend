@@ -25,7 +25,7 @@ if (!jwtPrivateKey) {
 }
 
 const corsOptions = {
-  origin: "*",
+  origin: ['http://localhost:3000','https://boxin.devallapps.com'],
 };
 
 app.use(cors(corsOptions));
