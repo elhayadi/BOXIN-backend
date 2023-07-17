@@ -45,8 +45,8 @@ app.use(bodyParser.urlencoded({ extended: true }));
 (async () => {
   try {
     await db.sequelize.authenticate();
-    await db.sequelize.sync();
-    initial(); // Just use it in development, at the first time execution!. Delete it in production
+  //  await db.sequelize.sync();
+   // initial(); // Just use it in development, at the first time execution!. Delete it in production
   } catch (error) {
     console.log(error);
   }
